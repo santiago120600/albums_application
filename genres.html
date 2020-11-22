@@ -111,16 +111,48 @@
 
       $('#form_genre').on('submit', function (event) {
         event.preventDefault();
+
+        $(this).find('input').each(function(){
+          $(this).removeClass('is-invalid');
+          $(this).next('.invalid-feedback').remove();
+        });
+
         var _data = $(this).serialize();
         $.ajax({
           url: "http://localhost/codeigniter_api/index.php/genres/api/genres",
           type: "post",
           data: _data,
           success: function (response) {
-            console.info(response);
+            if (response.status_text	== "error") {
+              //para que aparezcan los errores de validacion en la vista
+              $.each(response.errors, function(key, value){
+                $('#'+key).addClass('is-invalid');
+                $('#'+key).after('<div class="invalid-feedback">'+value+'</div>');
+              })
+            }else if (response.status_text == 'success') {
+              
+            }else{
+
+            }
             _mytable.ajax.reload();
           }
         });
+      });
+
+      $('#modal_genre').on('hidden.bs.modal',function(e){
+        $('#form_genre').find('input').each(function(){
+          $(this).val('');
+          $(this).removeClass('is-invalid');
+          $(this).next('invalid-feedback').remove();
+        });
+      });
+
+      $('#table_genre').on('click','.custom-btn',function(){
+        var selected = _mytable.row($(this).parents('tr')).data();
+
+        $('#pGenre').val(selected.genre_name);
+
+        $('#modal_genre').modal('show');
       });
 
     });
