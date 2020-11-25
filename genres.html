@@ -8,10 +8,8 @@
     integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous" />
   <!-- datatable -->
   <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.css" />
-  <!-- select2 -->
-  <!-- https://select2.org/getting-started/installation -->
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
-
+  <!-- sweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
 
   <title>G&eacute;neros</title>
 </head>
@@ -59,13 +57,13 @@
                 <label for="pGenre">Nombre G&eacute;nero: </label>
                 <input type="text" name="pGenre" id="pGenre" class="form-control" />
               </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">
-              Cancelar
-            </button>
-            <button type="submit" class="btn btn-primary">Guardar</button>
-          </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                Cancelar
+              </button>
+              <button type="submit" class="btn btn-primary">Guardar</button>
+            </div>
         </form>
       </div>
     </div>
@@ -86,6 +84,8 @@
   <script type="text/javascript">
     $(function () {
 
+      var metodo = "new";
+
       var _mytable = $("#table_genre").DataTable({
         ajax: {
           url: "http://localhost/codeigniter_api/index.php/genres/api/genres",
@@ -103,7 +103,7 @@
             orderable: false,
             data: null,
             defaultContent:
-              "<button class='btn btn-warning custom-btn'>Editar</button> <button class='btn btn-danger custom-btn'>Borrar</button>",
+              "<button class='btn btn-warning custom-btn' data-method='update'>Editar</button> <button class='btn btn-danger custom-btn' data-method='delete'>Borrar</button>",
             targets: -1
           }
         ]
@@ -112,26 +112,46 @@
       $('#form_genre').on('submit', function (event) {
         event.preventDefault();
 
-        $(this).find('input').each(function(){
+        var _method = "post";
+        var _url = "http://localhost/codeigniter_api/index.php/genres/api/genres";
+        if (metodo == "update") {
+          _method = "put";
+          var _url = "http://localhost/codeigniter_api/index.php/genres/api/genres/pid/" + $('#pId').val();
+        } else if (metodo == "delete") {
+          _method = "delete";
+          var _url = "http://localhost/codeigniter_api/index.php/genres/api/genres/pid/" + $('#pId').val();
+        }
+
+        $(this).find('input').each(function () {
           $(this).removeClass('is-invalid');
           $(this).next('.invalid-feedback').remove();
         });
 
         var _data = $(this).serialize();
         $.ajax({
-          url: "http://localhost/codeigniter_api/index.php/genres/api/genres",
-          type: "post",
+          url: _url,
+          type: _method,
           data: _data,
           success: function (response) {
-            if (response.status_text	== "error") {
+            if (response.status_text == "error") {
+              Swal.fire(
+                'Error',
+                'Ver valiadaciones',
+                'error'
+              );
               //para que aparezcan los errores de validacion en la vista
-              $.each(response.errors, function(key, value){
-                $('#'+key).addClass('is-invalid');
-                $('#'+key).after('<div class="invalid-feedback">'+value+'</div>');
+              $.each(response.errors, function (key, value) {
+                $('#' + key).addClass('is-invalid');
+                $('#' + key).after('<div class="invalid-feedback">' + value + '</div>');
               })
-            }else if (response.status_text == 'success') {
-              
-            }else{
+            } else if (response.status_text == 'success') {
+              Swal.fire(
+                'Correcto',
+                'Formulario enviado correctamente',
+                'success'
+              );
+              $('#modal_genre').modal('hide');
+            } else {
 
             }
             _mytable.ajax.reload();
@@ -139,17 +159,22 @@
         });
       });
 
-      $('#modal_genre').on('hidden.bs.modal',function(e){
-        $('#form_genre').find('input').each(function(){
+      $('#modal_genre').on('hidden.bs.modal', function (e) {
+
+        metodo = "new";
+        $('#pId').remove();
+
+        $('#form_genre').find('input').each(function () {
           $(this).val('');
           $(this).removeClass('is-invalid');
           $(this).next('invalid-feedback').remove();
         });
       });
 
-      $('#table_genre').on('click','.custom-btn',function(){
+      $('#table_genre').on('click', '.custom-btn', function () {
         var selected = _mytable.row($(this).parents('tr')).data();
-
+        metodo = $(this).attr('data-method');
+        $("#form_genre").append('<input type="hidden" id="pId" value="' + selected.genre_id + '"></input>');
         $('#pGenre').val(selected.genre_name);
 
         $('#modal_genre').modal('show');

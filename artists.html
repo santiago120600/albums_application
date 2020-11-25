@@ -8,10 +8,8 @@
     integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous" />
   <!-- datatable -->
   <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.css" />
-  <!-- select2 -->
-  <!-- https://select2.org/getting-started/installation -->
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
-
+  <!-- sweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
 
   <title>Artistas</title>
 </head>
@@ -86,6 +84,8 @@
   <script type="text/javascript">
     $(function () {
 
+      var metodo = "new";
+
       var _mytable = $("#table_artists").DataTable({
         ajax: {
           url: "http://localhost/codeigniter_api/index.php/artists/api/artists",
@@ -103,7 +103,7 @@
             orderable: false,
             data: null,
             defaultContent:
-              "<button class='btn btn-warning custom-btn'>Editar</button> <button class='btn btn-danger custom-btn'>Borrar</button>",
+              "<button class='btn btn-warning custom-btn' data-method='update'>Editar</button> <button class='btn btn-danger custom-btn' data-method='delete'>Borrar</button>",
             targets: -1
           }
         ]
@@ -111,6 +111,18 @@
 
       $('#form_artist').on('submit', function (event) {
         event.preventDefault();
+
+        var _method = "post";
+        var _url = "http://localhost/codeigniter_api/index.php/artists/api/artists";
+        if (metodo == "update") {
+          _method = "put";
+          var _url = "http://localhost/codeigniter_api/index.php/artists/api/artists/pid/" + $('#pId').val();
+        } else if (metodo == "delete") {
+          _method = "delete";
+          var _url = "http://localhost/codeigniter_api/index.php/artists/api/artists/pid/" + $('#pId').val();
+        }
+
+
         $(this).find('input').each(function(){
           $(this).removeClass('is-invalid');
           $(this).next('.invalid-feedback').remove();
@@ -118,18 +130,29 @@
 
         var _data = $(this).serialize();
         $.ajax({
-          url: "http://localhost/codeigniter_api/index.php/artists/api/artists",
-          type: "post",
+          url: _url,
+          type: _method,
           data: _data,
           success: function (response) {
             if (response.status_text	== "error") {
               //para que aparezcan los errores de validacion en la vista
+              Swal.fire(
+                'Error',
+                'Ver valiadaciones',
+                'error'
+              );
+
               $.each(response.errors, function(key, value){
                 $('#'+key).addClass('is-invalid');
                 $('#'+key).after('<div class="invalid-feedback">'+value+'</div>');
               })
             }else if (response.status_text == 'success') {
-              
+              Swal.fire(
+                'Correcto',
+                'Formulario enviado correctamente',
+                'success'
+              );
+              $('#modal_artists').modal('hide');
             }else{
 
             }
@@ -140,6 +163,10 @@
 
 
       $('#modal_artists').on('hidden.bs.modal',function(e){
+
+        metodo = "new";
+        $('#pId').remove();
+
         $('#form_artist').find('input').each(function(){
           $(this).val('');
           $(this).removeClass('is-invalid');
@@ -150,9 +177,12 @@
       $('#table_artists').on('click','.custom-btn',function(){
         var selected = _mytable.row($(this).parents('tr')).data();
 
+        metodo = $(this).attr('data-method');
+        $("#form_artist").append('<input type="hidden" id="pId" value="' + selected.artist_id + '"></input>');
+
         $('#pName').val(selected.artist_name);
 
-        $('#modal_albums').modal('show');
+        $('#modal_artists').modal('show');
       });
 
     });
