@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
+    integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous" />
+  <!-- datatable -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.css" />
+  <!-- select2 -->
+  <!-- https://select2.org/getting-started/installation -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="select2-bootstrap.css" />
+  <!-- sweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+
+  <title>Conciertos</title>
+</head>
+
+<body>
+  <div class="container">
+    <a href="index.html" class="btn btn-primary">Regresar</a>
+    <div class="row mt-1">
+      <div class="col-12">
+        <button class="btn btn-success" data-toggle="modal" data-target="#modal_concerts">
+          Nuevo
+        </button>
+      </div>
+    </div>
+
+    <div class="row mt-2">
+      <div class="col-12">
+        <table class="table table-bordered table-striped" id="table_concerts">
+          <thead>
+            <tr>
+              <th>Titulo</th>
+              <th>Fecha</th>
+              <th>Lugar</th>
+              <th>Artista</th>
+            </tr>
+          </thead>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="modal_concerts" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Conciertos</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <form id="form_concerts">
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-6 form-group">
+                <label for="pTitle">Titulo: </label>
+                <input type="text" name="pTitle" id="pTitle" class="form-control" />
+              </div>
+              <div class="col-6 form-group">
+                <label for="pDate">Fecha: </label>
+                <input type="date" name="pDate" id="pDate" class="form-control" />
+              </div>
+              <div class="col-6 form-group">
+                <label for="pPlace">Lugar: </label>
+                <input type="text" name="pPlace" id="pPlace" class="form-control" />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-6 form-group">
+                <label for="pArtists">Artista</label>
+                <select name="pArtists" id="pArtists" class="" style="width: 100%;">
+                  <option value=""></option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx"
+    crossorigin="anonymous"></script>
+  <!-- datatable -->
+  <!-- https://www.datatables.net/manual/installation -->
+  <script type="text/javascript" charset="utf8"
+    src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.js"></script>
+  <!-- select2 -->
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
+
+  <script type="text/javascript">
+    $(function () {
+
+      var metodo = "new";
+
+      var _mytable = $("#table_concerts").DataTable({
+        ajax: {
+          url: "http://localhost/codeigniter_api/index.php/concerts/api/concerts",
+          dataSrc: "data",
+          type: "get",
+          cache: true
+        },
+        columns: [
+          { data: "concert_title", defaultContent: "" },
+          { data: "concert_date", defaultContent: "" },
+          { data: "concert_place", defaultContent: "" },
+          { data: "artist_name", defaultContent: "" },
+        ]
+      });
+
+      $("#form_concerts").on("submit", function (event) {
+        event.preventDefault();
+
+        var _method = "post";
+        var _url = "http://localhost/codeigniter_api/index.php/concerts/api/concerts/";
+        if (metodo == "update") {
+          _method = "put";
+          var _url = "http://localhost/codeigniter_api/index.php/concerts/api/concerts/pid/" + $('#pId').val();
+        } else if (metodo == "delete") {
+          _method = "delete";
+          var _url = "http://localhost/codeigniter_api/index.php/concerts/api/concerts/pid/" + $('#pId').val();
+        }
+
+        $(this)
+          .find("input,select")
+          .each(function () {
+            $(this).removeClass("is-invalid");
+            $(this).next(".invalid-feedback").remove();
+          });
+
+        var _data = $(this).serialize();
+        $.ajax({
+          url: _url,
+          type: _method,
+          data: _data,
+          success: function (response) {
+            if (response.status_text == "error") {
+              //para que aparezcan los errores de validacion en la vista
+              Swal.fire(
+                'Error',
+                'Ver valiadaciones',
+                'error'
+              );
+              $.each(response.errors, function (key, value) {
+                $("#" + key).addClass("is-invalid");
+                $("#" + key).after(
+                  '<div class="invalid-feedback">' + value + "</div>"
+                );
+              });
+            } else if (response.status_text == "success") {
+              Swal.fire(
+                'Correcto',
+                'Formulario enviado correctamente',
+                'success'
+              );
+              $('#modal_concerts').modal('hide');
+            } else {
+            }
+            _mytable.ajax.reload();
+          }
+        });
+      });
+
+      //para que cuando se cierre el modal se limpien los input
+      $("#modal_concerts").on("hidden.bs.modal", function (e) {
+
+        metodo = "new";
+        $('#pId').remove();
+
+        $("#form_concerts")
+          .find("input")
+          .each(function () {
+            $(this).val("");
+            $(this).removeClass("is-invalid");
+            $(this).next("invalid-feedback").remove();
+          });
+        // limpiar los select
+        $("#form_concerts")
+          .find("select")
+          .each(function () {
+            $(this).val("").trigger('change');
+            $(this).removeClass("is-invalid");
+            $(this).next("invalid-feedback").remove();
+          });
+      });
+
+      $("#modal_concerts").on("shown.bs.modal", function (e) {
+        fillSelectArtists();
+      });
+
+      //para que en edita abra el modal y los input tengan la informacion
+      $("#form_concerts").on("click", ".custom-btn", function () {
+        var selected = _mytable.row($(this).parents("tr")).data();
+        metodo = $(this).attr('data-method');
+
+
+        $("#form_concerts").append('<input type="hidden" id="pId" value="' + selected.album_id + '"></input>');
+
+        $("#pTitle").val(selected.album_name);
+        $("#pDate").val(selected.album_date_released);
+        $("#pPlace").val(selected.album_time_released);
+        //los select
+        setTimeout(function () {
+          $("#pArtists").val(selected.artist_fk);
+        }, 200);
+
+        $("#modal_concerts").modal("show");
+      });
+    });
+
+    function fillSelectArtists() {
+      $.ajax({
+        url: "http://localhost/codeigniter_api/index.php/artists/api/artists",
+        type: "get",
+        success: function (response) {
+          if (response.status_text == "error") {
+            // mensaje de error
+          } else if (response.status_text == "success") {
+            var result = $.map(response.data, function (item) {
+              return {
+                text: item.artist_name,
+                id: item.artist_id
+              };
+            });
+
+            $('#pArtists').select2({
+              placeholder: "selecciona una opcion",
+              data: result,
+              dropdownParent: $("#modal_concerts"),
+              theme: "bootstrap4"
+            });
+
+          } else {
+            // mensaje de error
+          }
+        }
+      });
+    }
+
+  </script>
+</body>
+
+</html>
